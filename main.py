@@ -79,7 +79,7 @@ def analyze_diff(diff_text):
 def generate_explanation(ticket, diff_text):
     prompt = f"""
     The following are code changes for a Magento 2 instance, specifically related to the ticket: {ticket}. 
-    Please explain these changes, and describe why they might have been necessary or how they might fix a bug.  Please format your response into five sections:  'Code Changes Explained:' (this should indicate what the changes are and, if necessary, code snippets regarding how they work) and 'Why These Changes Might Have Been Necessary:' (this should indicate why these changes were made) and 'Possible Improvements' (this should be specific to the code, best practices, and how it was written, with improvement code snippet examples)  and 'Relevant Documentation, Links, and References:' and 'Conclusion:'
+    Please explain these changes, and describe why they might have been necessary or how they might fix a bug.  Please format your response into five sections:  'Code Changes Explained:' (this should indicate what the changes are and, if necessary, code snippets regarding how they work) and 'Why These Changes Might Have Been Necessary:' (this should indicate why these changes were made) and 'Possible Improvements' (this should be specific to the code, best practices, and how it was written, with improvement code snippet examples as well as the existing code to be improved)  and 'Relevant Documentation, Links, and References:' and 'Conclusion:'.  In your feedback, please add statements like "this was done because" to help me understand the potential reasoning behind a decision and how to shape my decision making in the future.
 
     Code Diff:
     {diff_text}
