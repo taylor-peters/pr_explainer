@@ -78,8 +78,33 @@ def analyze_diff(diff_text):
 
 def generate_explanation(ticket, diff_text):
     prompt = f"""
-    The following are code changes for a Magento 2 instance, specifically related to the ticket: {ticket}. 
-    Please explain these changes, and describe why they might have been necessary or how they might fix a bug.  Please format your response into five sections:  'Code Changes Explained:' (this should indicate what the changes are and, if necessary, code snippets regarding how they work) and 'Why These Changes Might Have Been Necessary:' (this should indicate why these changes were made) and 'Possible Improvements' (this should be specific to the code, best practices, and how it was written, with improvement code snippet examples as well as the existing code to be improved)  and 'Relevant Documentation, Links, and References:' and 'Conclusion:'.  In your feedback, please add statements like "this was done because" to help me understand the potential reasoning behind a decision and how to shape my decision making in the future.
+   You are a senior Magento developer mentoring a junior developer. Please explain these changes in detail, focusing on teaching concepts, best practices, and real-world applications. Format your response into six sections:
+
+Code Changes Explained:
+
+Provide a clear and step-by-step explanation of the code changes, including the context of the modifications and how they work. Include code snippets of the updated code, highlight key parts, and explain what they do.
+If applicable, describe how these changes interact with core Magento features, custom modules, or third-party extensions (e.g., Webkul Marketplace or Dynamics 365 integration).
+Why These Changes Might Have Been Necessary:
+
+Explain the reasoning behind these changes. Describe the specific issue or requirement that prompted the changes and how they address the problem.
+Use statements like "this was done because" or "this solves the problem by" to clearly convey the thought process behind the decisions.
+Key Magento Concepts and Practices:
+
+Highlight the Magento 2 concepts, patterns, and features relevant to these changes (e.g., dependency injection, observers, plugins, UI components).
+Relate these concepts to the changes made, providing insights into how they can be applied in other contexts.
+Possible Improvements:
+
+Suggest potential ways to enhance the code, focusing on Magento 2 best practices, performance optimization, and maintainability.
+Include concrete examples of how the current code could be refactored or improved, with before-and-after code snippets. Emphasize principles like single responsibility, reusability, and modularity.
+Relevant Documentation, Links, and References:
+
+Provide links to relevant Magento 2 documentation, community articles, or official guides that explain related concepts.
+Include suggestions for further reading to deepen the developer's understanding of Magento 2.
+Conclusion and Learning Points:
+
+Summarize the key learning points from these changes and how they contribute to the overall functionality of the project.
+Include practical takeaways or tips for the junior developer to apply in future Magento 2 development tasks.
+Your feedback should be clear, structured, and tailored for a junior developer who is eager to learn and improve. Focus on breaking down complex concepts into digestible pieces, providing actionable advice, and encouraging thoughtful decision-making in Magento 2 development.
 
     Code Diff:
     {diff_text}
@@ -155,9 +180,13 @@ def format_text(text):
 def generate_explanation_for_pr(pr, jira_ticket, diff_text, count, pr_url):
     explanation = generate_explanation(f"{jira_ticket.key} - {jira_ticket.fields.summary}", diff_text)
 
+    ticket_number = extract_ticket_number(pr['title'])  
+    jira_url = f"https://gearupsports.atlassian.net/browse/{ticket_number}"    
+    
     # Print the formatted output, including the PR URL
-    print(f"{Back.GREEN}PR: {pr['title']} | {pr_url}")
     print(f"{Back.GREEN}Jira Ticket: {jira_ticket.key} - {jira_ticket.fields.summary}{Style.RESET_ALL}\n")
+    print(f"{Back.GREEN}Ticket Link: {jira_url} | PR: {pr['title']} | {pr_url}")
+    
     
     # Format Explanation
     print(format_text(explanation))
@@ -170,12 +199,10 @@ def generate_explanation_for_pr(pr, jira_ticket, diff_text, count, pr_url):
 
 
 def main():
-
-    print('\n')
-
     # Set up command-line argument parsing
     parser = argparse.ArgumentParser(description='PR Explainer Script')
     parser.add_argument('-t', '--ticket', type=str, help='Jira ticket number to process (e.g., TT-3964)')
+    parser.add_argument('-e', '--extract-diff', action='store_true', help='Extract and print the diff without analyzing it')
     args = parser.parse_args()
 
     # Fetch merged PRs
@@ -195,15 +222,27 @@ def main():
                     pr_diff = get_pr_diff(pr['id'])
                     if pr_diff:
                         pr_url = pr['links']['self']['href']  # Extract pull request link
-                        count = generate_explanation_for_pr(pr, jira_ticket, pr_diff, count, pr_url)
+                        
+                        # Extract the diff without analyzing if the flag is set
+                        if args.extract_diff:
+                            print(f"{Fore.GREEN}PR: {pr['title']} | {pr_url}")
+                            print(f"{Fore.YELLOW}Jira Ticket: {jira_ticket.key} - {jira_ticket.fields.summary}")
+                            print(f"{Fore.CYAN}### Code Diff:\n")
+                            print(pr_diff)
+                            print(f"{Style.RESET_ALL}\n{'-' * 80}\n")
+                        else:
+                            # Generate explanation for the PR if the flag is not set
+                            count = generate_explanation_for_pr(pr, jira_ticket, pr_diff, count, pr_url)
 
-        # List of all explained tickets with PR links
-        print(f"{Fore.MAGENTA}### List of Explained Tickets:\n")
-        for pr in merged_prs:
-            ticket_number = extract_ticket_number(pr['title'])
-            jira_url = f"https://gearupsports.atlassian.net/browse/{ticket_number}"
-            pr_url = pr['links']['self']['href']  # Extract pull request link
-            print(f"- [{ticket_number}]({jira_url}) | PR: [{pr['id']}]({pr_url})")
+        # List of all explained tickets with PR links (only when not extracting diff)
+        if not args.extract_diff:
+            print(f"{Fore.MAGENTA}### List of Explained Tickets:\n")
+            for pr in merged_prs:
+                ticket_number = extract_ticket_number(pr['title'])
+                jira_url = f"https://gearupsports.atlassian.net/browse/{ticket_number}"
+                pr_url = pr['links']['self']['href']  # Extract pull request link
+                print(f"- [{ticket_number}]({jira_url}) | PR: [{pr['id']}]({pr_url})")
 
 if __name__ == '__main__':
     main()
+
